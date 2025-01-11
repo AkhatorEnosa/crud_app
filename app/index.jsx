@@ -1,19 +1,28 @@
-import { Appearance, Button, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from '@/constants/Colors'
 import { data } from '@/data/todos'
+import { Inter_500Medium, useFonts } from '@expo-google-fonts/inter'
+import Animated, { LinearTransition } from "react-native-reanimated";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import React, { useState } from "react";
+import Octicons from '@expo/vector-icons/Octicons';
+import React, { useContext, useState } from "react";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function Index() {
-  const [todos, setTodos] = useState([...data])
+  const { colorScheme, setColorScheme, theme } = useContext(ThemeContext)
 
-  const [inputText, onChangeinputText] = React.useState('');
+  const [todos, setTodos] = useState(data.sort((a, b) => b.id - a.id))
 
-  const colorScheme = Appearance.getColorScheme()
+  const [inputText, setInputText] = useState('');
 
-  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const [loaded, error] = useFonts({
+    Inter_500Medium,
+  })
+
+  if(!loaded && !error) {
+    return null
+  }
 
   const styles = createStyles(theme, colorScheme);
 
@@ -29,20 +38,22 @@ export default function Index() {
                     </View>
   
   const handleSubmit = () => {
-    if(inputText.length > 0) {
-      todos.push({
-        "id": todos.length > 0 ? todos[todos.length - 1].id + 1 : 1,
-        "title": inputText,
-        "completed": false
-      })
+    if(inputText.trim()) {
+      const newId = todos.length > 0 ? todos[0].id + 1 : 1;
+
+      setTodos([{
+        id: newId,
+        title: inputText,
+        completed: false
+      }, ...todos])
     } else {
       alert("You need to fill in a todo first")
     }
-    onChangeinputText("")
+    setInputText("")
   }
 
   const handleDone = (id) => {
-      setTodos(todos.map(todo => todo.id === id ? {...todo, completed: !todo.completed } : {...todo, completed: todo.completed }))
+      setTodos(todos.map(todo => todo.id === id ? {...todo, completed: !todo.completed } : todo))
   }
 
   const handleDelete = (id) => {
@@ -56,17 +67,21 @@ export default function Index() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            onChangeText={onChangeinputText}
+            onChangeText={setInputText}
             value={inputText}
             placeholder="Add a new todo"
+            placeholderTextColor="grey"
           />
           <Pressable style={styles.inputButton} onPress={handleSubmit}>
             <Text style={styles.inputButtonText}>Add</Text>
           </Pressable>
+          <Pressable onPress={() => setColorScheme(colorScheme === 'light' ? 'dark' : 'light')} style={{ marginLeft: 10}}>
+            <Octicons name={colorScheme === 'dark' ? 'moon' : 'sun'} size={36} color={theme.text} selectable={undefined} style={{ width: 36 }}/>
+          </Pressable>
         </View>
-        <FlatList 
+        <Animated.FlatList  
           data={todos}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(todo) => todo.id}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
@@ -77,10 +92,12 @@ export default function Index() {
             <Pressable style={styles.todo} onPress={() => handleDone(item.id)}>
               <Text style={!item.completed ? styles.todoText : styles.todoDone}>{item.title}</Text>
               <Pressable style={styles.button} onPress={() => handleDelete(item.id)}>
-                <MaterialIcons name="delete" size={24} color={colorScheme !== 'dark' && 'white' } />
+                <MaterialIcons name="delete" size={24} color={colorScheme !== 'dark' && 'white' } selectable={undefined}/>
               </Pressable>
             </Pressable>
           )}
+          itemLayoutAnimation={LinearTransition}
+          keyboardDismissMode="on-drag"
         />
       </View>
     </Container>
@@ -99,6 +116,7 @@ function createStyles(theme, colorScheme) {
     },
     inputContainer: {
       width: '100%',
+      maxWidth: 1024,
       paddingLeft: 20,
       paddingRight: 20,
       paddingTop: 10,
@@ -106,21 +124,23 @@ function createStyles(theme, colorScheme) {
       flexDirection: 'row',
       gap: 10,
       marginBottom: 20,
+      pointerEvents: "auto" 
     },
     input: {
       width: '85%',
       borderWidth: 1,
       borderColor: colorScheme === 'dark' ? "grey" : "black",
-      color: 'grey',
+      color: theme.text,
       padding: 5,
       borderRadius: 5,
       height: 50,
-      fontSize: 20
+      fontSize: 20,
+      fontFamily: 'Inter_500Medium'
     },
     inputButton: {
       width: '15%',
       borderRadius: 5,
-      backgroundColor: colorScheme === 'dark' ? "white" : "black",
+      backgroundColor: theme.button,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -144,16 +164,19 @@ function createStyles(theme, colorScheme) {
       padding: 10,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: "center"
+      alignItems: "center",
+      pointerEvents: 'auto'
     },
     todoText: {
       color: theme.text,
-      fontSize: 20
+      fontSize: 20,
+      fontFamily: 'Inter_500Medium'
     },
     todoDone: {
       color: 'grey', 
       textDecorationLine: "line-through",
-      fontSize: 20
+      fontSize: 20,
+      fontFamily: 'Inter_500Medium'
     },
     button: {
       padding: 5,
