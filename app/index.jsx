@@ -5,14 +5,17 @@ import { Inter_500Medium, useFonts } from '@expo-google-fonts/inter'
 import Animated, { LinearTransition } from "react-native-reanimated";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from "react-native";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Octicons from '@expo/vector-icons/Octicons';
 import React, { useContext, useState, useEffect } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
+import { useRouter } from "expo-router";
 
 export default function Index() {
   const { colorScheme, setColorScheme, theme } = useContext(ThemeContext)
+
+  const router = useRouter();
 
   const [todos, setTodos] = useState([])
 
@@ -25,7 +28,7 @@ export default function Index() {
 
           const storageTodos = jsonValue !== null ? JSON.parse(jsonValue) : null;
 
-          if(storageTodos) {
+          if(storageTodos && storageTodos.length) {
             setTodos(storageTodos.sort((a, b) => b.id - a.id))
           } else {
             setTodos(data.sort((a, b) => b.id - a.id))
@@ -78,9 +81,7 @@ export default function Index() {
 
     storeData()
     saveTheme()
-  }, [todos, colorScheme])
-  
-  
+  }, [todos, colorScheme]) 
 
   const [loaded, error] = useFonts({
     Inter_500Medium,
@@ -94,7 +95,7 @@ export default function Index() {
 
   const Container = Platform.OS === 'web' ? ScrollView : SafeAreaView;
 
-  const seperatorComp = <View style={styles.seperator}/>
+  // const seperatorComp = <View style={styles.seperator}/>
 
   const footerComp = <Text style={styles.footer}>.</Text>
   
@@ -127,6 +128,10 @@ export default function Index() {
     setTodos(todos.filter((todo) => todo.id !== id))
   }
 
+  const handlePress = (id) => {
+    router.push(`/todos/${id}`)
+  }
+
   return (
     <Container>
       <View style={styles.overallContainer}>
@@ -140,6 +145,7 @@ export default function Index() {
             value={inputText}
             placeholder="Add a new todo"
             placeholderTextColor="grey"
+            maxLength={30}
           />
           <Pressable style={styles.inputButton} onPress={handleSubmit}>
             <Text style={styles.inputButtonText}>Add</Text>
@@ -150,18 +156,21 @@ export default function Index() {
           keyExtractor={(todo) => todo.id}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
-          ItemSeparatorComponent={seperatorComp}
+          // ItemSeparatorComponent={seperatorComp}
           ListFooterComponent={footerComp}
           ListEmptyComponent={emptyList}
           renderItem={({item}) => (
-            <Pressable style={styles.todo} onPress={() => handleDone(item.id)}>
-              <Text style={!item.completed ? styles.todoText : styles.todoDone}>{item.title}</Text>
-              <Pressable style={styles.button} onPress={() => handleDelete(item.id)}>
-                <MaterialIcons name="delete" size={24} color={colorScheme !== 'dark' && 'white' } selectable={undefined}/>
+            <View style={styles.todo} >
+              <Pressable 
+                onPress={() => handlePress(item.id)}
+                onLongPress={() => handleDone(item.id)}>
+                <Text style={!item.completed ? styles.todoText : styles.todoDone}>{item.title}</Text>
               </Pressable>
-            </Pressable>
+              <Pressable style={styles.button} onPress={() => handleDelete(item.id)}>
+                <AntDesign name="close" size={18} color={colorScheme !== 'dark' && 'white'} selectable={undefined}/>
+              </Pressable>
+            </View>
           )}
           itemLayoutAnimation={LinearTransition}
           keyboardDismissMode="on-drag"
@@ -175,14 +184,13 @@ export default function Index() {
 function createStyles(theme, colorScheme) {
   return StyleSheet.create({
     overallContainer: {
-      paddingTop: 50,
+      paddingTop: 20,
       paddingBottom: 10,
       paddingRight: 10,
       paddingLeft: 10,
       width: '100%',
-      height: '100%',
+      height: '100vh',
       backgroundColor: theme.background,
-      color: 'white'
     },
     inputContainer: {
       width: '100%',
@@ -227,7 +235,7 @@ function createStyles(theme, colorScheme) {
       fontSize: 20
     },
     contentContainer: {
-      paddingTop: 10,
+      gap: 2,
       paddingBottom: 10,
       width: '100%',
       backgroundColor: theme.background,
@@ -240,10 +248,14 @@ function createStyles(theme, colorScheme) {
     },
     todo: {
       padding: 10,
+      paddingTop: 15,
+      paddingBottom: 15,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: "center",
-      pointerEvents: 'auto'
+      pointerEvents: 'auto',
+      backgroundColor: colorScheme === 'light' ? "rgba(0,0,0,0.04)" : "rgba(225,225,225, 0.2)",
+      borderRadius: 10
     },
     todoText: {
       color: theme.text,
@@ -258,9 +270,8 @@ function createStyles(theme, colorScheme) {
     },
     button: {
       padding: 5,
-      backgroundColor: 'red',
-      borderRadius: '100%',
-
+      backgroundColor: theme.deleteButton,
+      borderRadius: '100%'
     },
     footer: {
       textAlign: 'center',
@@ -269,10 +280,10 @@ function createStyles(theme, colorScheme) {
       color: 'grey'
     },
     emptyList: {
-      height: '100vh',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
+      paddingTop: 80,
       fontSize: 20
     },
     emptyListText: {

@@ -8,12 +8,14 @@ export const Colors = {
     text: 'black',
     background: '#fff',
     icon: 'black',
-    button: 'royalblue'
+    button: 'royalblue',
+    deleteButton: 'black'
   },
   dark: {
     text: 'white',
     background: '#000',
     icon: 'red',
-    button: 'white'
+    button: 'white',
+    deleteButton: '#ff3b3b'
   },
 };
